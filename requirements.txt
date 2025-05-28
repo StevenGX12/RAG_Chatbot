@@ -4,7 +4,7 @@ uvicorn
 streamlit
 chromadb
 sentence-transformers
-pypdf
+PyPDF2
 python-docx
 python-pptx
 pandas
