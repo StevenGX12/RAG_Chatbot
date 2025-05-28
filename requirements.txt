@@ -1,0 +1,19 @@
+# Core components
+fastapi
+uvicorn
+streamlit
+chromadb
+sentence-transformers
+pypdf
+python-docx
+python-pptx
+pandas
+opencv-python
+moviepy
+whisper
+librosa
+
+# Optional
+unstructured
+openai  # or transformers if using local models
+pyyaml  # for config.yaml
