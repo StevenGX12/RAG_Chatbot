@@ -13,6 +13,7 @@ moviepy
 whisper
 librosa
 numpy
+ollama
 
 # Optional
 unstructured
