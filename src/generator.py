@@ -1,5 +1,5 @@
 import ollama
-from retriever import retrieve_top_k
+from src.retriever import retrieve_top_k
 
 MODEL_NAME = "gemma3:latest"
 
