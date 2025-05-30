@@ -1,16 +1,19 @@
 import ollama
-from src.retriever import retrieve_top_k
-
-MODEL_NAME = "gemma3:latest"
+from src.retriever import Retriever
 
 
-def build_prompt(query, retrieved_chunks):
-    context_texts = "\n\n".join(
-        f"[{chunk['metadata'].get('source', '')} - {chunk['metadata'].get('page_slide', '')}]\n{chunk['document']}"
-        for chunk in retrieved_chunks
-    )
+class Generator:
+    def __init__(self, model_name="gemma3:latest", top_k=10):
+        self.model_name = model_name
+        self.retriever = Retriever(top_k=top_k)
 
-    return f"""You are a helpful technical interview tutor.
+    def build_prompt(self, query, retrieved_chunks):
+        context_texts = "\n\n".join(
+            f"[{chunk['metadata'].get('source', '')} - {chunk['metadata'].get('page_slide', '')}]\n{chunk['document']}"
+            for chunk in retrieved_chunks
+        )
+
+        return f"""You are a helpful technical interview tutor.
 
 Use the following context to answer the user's question:
 
@@ -21,19 +24,22 @@ Question: {query}
 Answer in a clear, concise, and beginner-friendly way.
 """
 
+    def generate_answer(self, query):
+        retrieved_chunks = self.retriever.retrieve_top_k(query)
+        prompt = self.build_prompt(query, retrieved_chunks)
 
-def generate_answer(query):
-    retrieved_chunks = retrieve_top_k(query)
-    prompt = build_prompt(query, retrieved_chunks)
+        response = ollama.chat(
+            model=self.model_name, messages=[{"role": "user", "content": prompt}]
+        )
 
-    response = ollama.chat(
-        model=MODEL_NAME, messages=[{"role": "user", "content": prompt}]
-    )
+        return response["message"]["content"]
 
-    return response["message"]["content"]
+    def run(self):
+        query = input("❓ Enter your question: ")
+        answer = self.generate_answer(query)
+        print("\n💡 Answer:\n", answer)
 
 
 if __name__ == "__main__":
-    query = input("❓ Enter your question: ")
-    answer = generate_answer(query)
-    print("\n💡 Answer:\n", answer)
+    generator = Generator()
+    generator.run()

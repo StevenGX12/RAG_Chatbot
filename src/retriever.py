@@ -1,48 +1,53 @@
 import chromadb
 from sentence_transformers import SentenceTransformer
-import numpy as np
-
-# Constants
-VECTOR_STORE_PATH = "./chroma_store"
-COLLECTION_NAME = "interview-prep"
-MODEL_NAME = "all-MiniLM-L6-v2"
-TOP_K = 5
-
-# Load embedding model
-embedder = SentenceTransformer(MODEL_NAME)
-
-# Set up ChromaDB client
-client = chromadb.PersistentClient(path=VECTOR_STORE_PATH)
-
-# Load collection
-collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
 
-def embed_query(query: str):
-    return embedder.encode(query, convert_to_numpy=True).tolist()
+class Retriever:
+    def __init__(
+        self,
+        vector_store_path="./chroma_store",
+        collection_name="interview-prep",
+        model_name="all-MiniLM-L6-v2",
+        top_k=10,
+    ):
+        self.top_k = top_k
+        self.model = SentenceTransformer(model_name)
+        self.client = chromadb.PersistentClient(path=vector_store_path)
+        self.collection = self.client.get_or_create_collection(name=collection_name)
 
+    def embed_query(self, query: str):
+        return self.model.encode(query, convert_to_numpy=True).tolist()
 
-def retrieve_top_k(query: str, top_k=TOP_K):
-    query_embedding = embed_query(query)
-    results = collection.query(query_embeddings=[query_embedding], n_results=top_k)
-    retrieved = []
-    for i in range(len(results["ids"][0])):
-        retrieved.append(
-            {
-                "id": results["ids"][0][i],
-                "document": results["documents"][0][i],
-                "metadata": results["metadatas"][0][i],
-                "distance": results["distances"][0][i],
-            }
+    def retrieve_top_k(self, query: str, top_k=None):
+        if top_k is None:
+            top_k = self.top_k
+        query_embedding = self.embed_query(query)
+        results = self.collection.query(
+            query_embeddings=[query_embedding], n_results=top_k
         )
-    return retrieved
+        retrieved = []
+        for i in range(len(results["ids"][0])):
+            retrieved.append(
+                {
+                    "id": results["ids"][0][i],
+                    "document": results["documents"][0][i],
+                    "metadata": results["metadatas"][0][i],
+                    "distance": results["distances"][0][i],
+                }
+            )
+        return retrieved
+
+    def run_query(self):
+        query = input("🔍 Enter your query: ")
+        results = self.retrieve_top_k(query)
+        for r in results:
+            print("\n---")
+            source = r["metadata"].get("source", "Unknown")
+            page_slide = r["metadata"].get("page_slide", "")
+            print(f"[{source}] {page_slide}")
+            print(r["document"])
 
 
 if __name__ == "__main__":
-    # Test query
-    query = input("🔍 Enter your query: ")
-    results = retrieve_top_k(query)
-    for r in results:
-        print("\n---")
-        print(f"[{r['metadata'].get('source')}] {r['metadata'].get('page_slide', '')}")
-        print(r["document"])
+    retriever = Retriever()
+    retriever.run_query()

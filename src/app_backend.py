@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from src.generator import generate_answer
+from src.generator import Generator
 
 app = FastAPI()
 
@@ -18,7 +18,11 @@ class QueryRequest(BaseModel):
     query: str
 
 
+# Initialize the Generator class once
+generator = Generator()
+
+
 @app.post("/chat")
 def chat(request: QueryRequest):
-    answer = generate_answer(request.query)
+    answer = generator.generate_answer(request.query)
     return {"answer": answer}
