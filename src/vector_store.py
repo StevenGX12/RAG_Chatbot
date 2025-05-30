@@ -3,6 +3,20 @@ import chromadb
 
 
 class VectorStoreManager:
+    """
+    Manages the storage and indexing of vector embeddings using ChromaDB.
+    This class handles loading embedded data from a JSON file, populating a ChromaDB
+    collection with new embeddings, and updating metadata flags to track which data
+    has been saved to the database.
+    Args:
+        vector_store_path (str, optional): Path to the ChromaDB persistent storage directory.
+            Defaults to "./chroma_store".
+        embedded_file (str, optional): Path to the JSON file containing embedded data.
+            Defaults to "./processed_corpus/embedded_chunks.json".
+        collection_name (str, optional): Name of the ChromaDB collection to use.
+            Defaults to "interview-prep".
+    """
+
     def __init__(
         self,
         vector_store_path="./chroma_store",
@@ -17,10 +31,23 @@ class VectorStoreManager:
         )
 
     def load_embedded_data(self):
+        """
+        Loads embedded data from the specified JSON file.
+        Returns:
+            list: A list of dictionaries, each representing an embedded data chunk.
+        """
         with open(self.embedded_file, "r", encoding="utf-8") as f:
             return json.load(f)
 
     def populate_vector_store(self, data):
+        """
+        Adds new embedded data to the ChromaDB collection if not already indexed.
+        Args:
+            data (list): A list of dictionaries containing embedding information.
+                Each dictionary should have 'id', 'embedding', 'document', and 'metadata' keys.
+        Returns:
+            None
+        """
         data_for_indexing = [
             item for item in data if not item["metadata"].get("saved_to_db", False)
         ]
@@ -41,6 +68,12 @@ class VectorStoreManager:
         )
 
     def update_saved_flag(self):
+        """
+        Updates the 'saved_to_db' flag in the embedded data JSON file for chunks
+        that have been indexed in the vector store.
+        Returns:
+            None
+        """
         updated_chunks = []
         update_count = 0
         with open(self.embedded_file, "r", encoding="utf-8") as f:
@@ -59,6 +92,12 @@ class VectorStoreManager:
         )
 
     def run_pipeline(self):
+        """
+        Executes the full pipeline: loads embedded data, populates the vector store,
+        and updates the 'saved_to_db' flags.
+        Returns:
+            None
+        """
         data = self.load_embedded_data()
         self.populate_vector_store(data)
         self.update_saved_flag()
